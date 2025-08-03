@@ -116,7 +116,7 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
                     }),
                 });
             }
-            canvas.add(borderRect);
+            // canvas.add(borderRect);  // currently not need
         }
 
         
