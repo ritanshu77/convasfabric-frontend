@@ -15,9 +15,9 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
 
         
         const canvas = new fabric.Canvas(canvasRef.current, {
-            width: 1000, 
-            height: 700, 
-            selection: false, 
+            width: 800,
+            height: 600,
+            // selection: false, 
             hoverCursor: 'default', 
         });
 
@@ -31,8 +31,8 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
             top: 0,
             width: canvas.width,
             height: canvas.height,
-            selectable: false,
-            evented: false,
+            // // selectable: false,
+            // // evented: false,
             fill: '#ffffff' 
         });
 
@@ -102,8 +102,8 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
                 stroke: borderColor,
                 strokeWidth: borderWidth,
                 fill: 'transparent',
-                selectable: false,
-                evented: false,
+                // selectable: false,
+                // evented: false,
             });
 
             if (json.border.type === 'glow_line') {
@@ -132,8 +132,8 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
                     textAlign: element.textAlign as any,
                     originX: 'center',
                     originY: 'center',
-                    selectable: false,
-                    evented: false,
+                    // selectable: false,
+                    // evented: false,
                 });
                 canvas.add(textObject);
             } else if (element.type === 'icon') {
@@ -147,8 +147,8 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
                     fill: iconColor,
                     originX: 'center',
                     originY: 'center',
-                    selectable: false,
-                    evented: false,
+                    // selectable: false,
+                    // evented: false,
                 });
                 canvas.add(iconCircle);
 
@@ -160,8 +160,8 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
                     fontFamily: 'Arial',
                     originX: 'center',
                     originY: 'center',
-                    selectable: false,
-                    evented: false,
+                    // selectable: false,
+                    // evented: false,
                 });
                 canvas.add(iconText);
             }
