@@ -1,39 +1,58 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import * as fabric  from 'fabric'; 
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import * as fabric from 'fabric';
 
 interface CertificateCanvasProps {
     json: any;
 }
+export interface CertificateCanvasHandle {
+    exportAsImage: () => string;
+}
 
-export default function CertificateCanvas({ json }: CertificateCanvasProps) {
+const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasProps>(({ json }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fabricCanvas = useRef<fabric.Canvas | null>(null);
+
+    useImperativeHandle(ref, () => ({
+        exportAsImage: () => {
+            console.log("--fabricCanvas.current---",fabricCanvas.current)
+            if (fabricCanvas.current) {
+                fabricCanvas.current.renderAll();
+                return fabricCanvas.current.toDataURL({
+                    format: 'png',
+                    quality: 1,
+                    multiplier: 2
+                });
+            }
+            return '';
+        }
+    }));
 
     useEffect(() => {
         if (!canvasRef.current || !json) return;
 
-        
+
         const canvas = new fabric.Canvas(canvasRef.current, {
-            width: 800,
-            height: 600,
+            width: 1000,
+            height: 700,
             // selection: false, 
-            hoverCursor: 'default', 
+            hoverCursor: 'default',
         });
 
-        
+
         canvas.clear();
 
-        
-        
+
+
         const backgroundRect = new fabric.Rect({
             left: 0,
             top: 0,
             width: canvas.width,
             height: canvas.height,
-            // // selectable: false,
-            // // evented: false,
-            fill: '#ffffff' 
+            selectable: false,
+            evented: false,
+            fill: '#ffffff'
         });
 
         if (json.background) {
@@ -78,18 +97,18 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
                     backgroundRect.set({ fill: gradient });
                 } else {
                     console.warn(`Could not parse gradient string: ${json.background.value}. Using a default color.`);
-                    backgroundRect.set({ fill: '#f0f0f0' }); 
+                    backgroundRect.set({ fill: '#f0f0f0' });
                 }
             } else if (json.background.type === 'image_description' || json.background.type === 'pattern') {
                 console.warn(`Background type "${json.background.type}" not fully supported for dynamic generation. Using a default color.`);
-                backgroundRect.set({ fill: '#f0f0f0' }); 
+                backgroundRect.set({ fill: '#f0f0f0' });
             }
         }
-        
+
         canvas.add(backgroundRect);
 
 
-        
+
         if (json.border) {
             const borderWidth = json.border.width || 10;
             const borderColor = json.border.color || '#000000';
@@ -118,9 +137,80 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
             }
             // canvas.add(borderRect);  // currently not need
         }
+        function remToPx(rem: number, base: number = 16): number {
+            return rem * base;
+        }
 
-        
+        function pxToRem(px: number, base: number = 16): number {
+            return px / base;
+        }
+
         json.elements.forEach((element: any) => {
+
+            // function fitTextToWidth(textbox, maxWidth) {
+            // while (textbox.width > maxWidth && textbox.fontSize > 10) {
+            //     textbox.set({
+            //         fontSize: textbox.fontSize - 1
+            //     });
+            //     textbox.set({
+            //         width: maxWidth
+            //     });
+            // }
+
+            // }
+            // function resizeCanvasToFitText(
+            //     canvas: fabric.Canvas,
+            //     textbox: fabric.IText | fabric.Textbox,
+            //     padding: number = 100,
+            //     minWidth: number = 800,
+            //     minHeight: number = 600
+            // ) {
+            //     const requiredWidth = textbox.getScaledWidth() + padding;
+            //     const requiredHeight = textbox.getScaledHeight() + 250;
+
+            //     const newWidth = Math.max(requiredWidth, minWidth);
+            //     const newHeight = Math.max(requiredHeight, minHeight);
+
+            //     // ✅ Use getWidth and getHeight instead of getDimensions()
+            //     const currentWidth = canvas.getWidth();
+            //     const currentHeight = canvas.getHeight();
+            //     console.log("-------currentWidth------",currentWidth)
+            //     console.log("-------newWidth------",newWidth)
+            //     if (currentWidth !== newWidth || currentHeight !== newHeight) {
+            //         // canvas.setDimensions({
+            //         //     width: newWidth,
+            //         //     height: newHeight
+            //         // });
+
+            //         // textbox.set({
+            //         //     left: newWidth / 2,
+            //         //     originX: 'center'
+            //         // });
+
+            //         // canvas.renderAll();
+            //     }
+            // }
+            function fitFontSizeToCanvas(
+                canvas: fabric.Canvas,
+                textObj: fabric.IText | fabric.Textbox,
+                maxWidth: number = canvas.getWidth() - 40,
+                maxHeight: number = canvas.getHeight() - 100,
+                minFontSize: number = 10
+            ) {
+                let fontSize = textObj.fontSize || 16;
+                textObj.set({ fontSize });
+
+                while (
+                    (textObj.getScaledWidth() > maxWidth || textObj.getScaledHeight() > maxHeight)
+                    && fontSize > minFontSize
+                ) {
+                    fontSize -= 1;
+                    textObj.set({ fontSize });
+                }
+
+                canvas.renderAll();
+            }
+
             if (element.type === 'text') {
                 const textObject = new fabric.IText(element.content || '', {
                     left: element.x,
@@ -136,6 +226,12 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
                     // evented: false,
                 });
                 canvas.add(textObject);
+                // const canvasWidthPx = canvas.getWidth();
+                // const canvasHeightPx = canvas.getHeight();
+                // const baseRem = 16;
+                // const maxWidthRem = pxToRem(canvasWidthPx - 40, baseRem);
+                // const maxHeightRem = pxToRem(canvasHeightPx - 100, baseRem);
+                fitFontSizeToCanvas(canvas, textObject);
             } else if (element.type === 'icon') {
                 const iconRadius = element.width / 2 || 45;
                 const iconColor = element.color || '#cccccc';
@@ -165,16 +261,18 @@ export default function CertificateCanvas({ json }: CertificateCanvasProps) {
                 });
                 canvas.add(iconText);
             }
+
         });
 
-        
+
         canvas.renderAll();
 
-        
+
         return () => {
             canvas.dispose();
         };
-    }, [json]); 
+    }, [json]);
 
     return <canvas ref={canvasRef} />;
-}
+})
+export default CertificateCanvas;

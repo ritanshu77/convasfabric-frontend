@@ -1,14 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import jsPDF from 'jspdf';
+import { useRef, useState } from "react"
 import axios from "axios"
 import CertificateCanvas from "@/component/CertificateCanvas"
+import type { CertificateCanvasHandle } from '@/component/CertificateCanvas';
 
 export default function Cartificate() {
     const [inputText, setInputText] = useState("")
     const [json, setJson] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const canvasRefs = useRef<CertificateCanvasHandle[]>([]);
 
     const handleSend = async () => {
         if (!inputText.trim()) return
@@ -20,6 +23,14 @@ export default function Cartificate() {
             return
         }
         try {
+            const oldSearchText = localStorage.getItem("oldSearchText");
+            const oldResponse = localStorage.getItem("oldResponse");
+            if (oldSearchText === inputText.trim() && oldResponse) {
+                const parsedData = JSON.parse(oldResponse);
+                setJson(parsedData);
+                setLoading(false);
+                return;
+            }
             let data = JSON.stringify({
                 "category": inputText
             });
@@ -85,6 +96,23 @@ export default function Cartificate() {
             setLoading(false)
         }
     }
+    const handleDownload = (index: number) => {
+        const ref = canvasRefs.current[index];
+        console.log("--ref----",ref)
+        if (!ref || !ref.exportAsImage) return;
+
+        const dataUrl = ref.exportAsImage();
+        console.log("---dataUrl----",dataUrl)
+        if (!dataUrl) return;
+
+        const pdf = new jsPDF("landscape", "pt", "a4");
+        const imgProps = pdf.getImageProperties(dataUrl);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`certificate-${index + 1}.pdf`);
+    };
 
     return (
         <div className="bg-gray-100 min-h-screen">
@@ -125,8 +153,25 @@ export default function Cartificate() {
                 json.map((item, index) => (
                     <div key={index}>
                         <div className="flex flex-col md:flex-row w-full max-w-screen-xl mx-auto items-start space-y-4 md:space-y-0 md:space-x-4 mt-8 p-4">
-                            <div className="w-full md:w-7/2 flex justify-center p-4 bg-white rounded-xl shadow-xl border border-gray-200 overflow-auto overflow-x-auto overflow-y-auto">
-                                <CertificateCanvas json={item} />
+                            <div className="md:w-7/2">
+                                <div className='w-full  flex justify-center p-4 bg-white rounded-xl shadow-xl border border-gray-200 overflow-auto overflow-x-auto overflow-y-auto'>
+                                    <CertificateCanvas
+                                        ref={(ref) => {
+                                            if (ref) canvasRefs.current[index] = ref;
+                                        }}
+                                        json={item}
+                                    />
+                                </div>
+                                <div>
+
+                                    <button
+                                        className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                                        onClick={() => handleDownload(index)}
+                                    >
+                                        Download PDF
+                                    </button>
+                                </div>
+
                             </div>
                             <div className="w-full md:w-7/5 flex justify-center p-4 bg-white rounded-xl shadow-xl border border-gray-200">
                                 <textarea
