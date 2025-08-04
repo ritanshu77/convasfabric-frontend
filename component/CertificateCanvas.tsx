@@ -16,7 +16,7 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
 
     useImperativeHandle(ref, () => ({
         exportAsImage: () => {
-            console.log("--fabricCanvas.current---",fabricCanvas.current)
+            console.log("--fabricCanvas.current---", fabricCanvas.current)
             if (fabricCanvas.current) {
                 fabricCanvas.current.renderAll();
                 return fabricCanvas.current.toDataURL({
@@ -32,7 +32,9 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
     useEffect(() => {
         if (!canvasRef.current || !json) return;
 
-
+        if (fabricCanvas.current) {
+            fabricCanvas.current.dispose();
+        }
         const canvas = new fabric.Canvas(canvasRef.current, {
             width: 1000,
             height: 700,
@@ -58,8 +60,8 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
         if (json.background) {
             if (json.background.type === 'color') {
                 backgroundRect.set({ fill: json.background.value });
-            } else if (json.background.type === 'gradient') {
-                const gradientMatch = json.background.value.match(/linear-gradient\(to (.*?), (.*?),\s*(.*?)\)/);
+            } else if (json.background.type === 'gradient' && typeof json?.background?.value === 'string') {
+                const gradientMatch = json.background?.value?.match(/linear-gradient\(to (.*?), (.*?),\s*(.*?)\)/);
                 if (gradientMatch) {
                     const [, direction, color1, color2] = gradientMatch;
                     let coords;
@@ -137,132 +139,92 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
             }
             // canvas.add(borderRect);  // currently not need
         }
-        function remToPx(rem: number, base: number = 16): number {
-            return rem * base;
-        }
+        // function remToPx(rem: number, base: number = 16): number {
+        //     return rem * base;
+        // }
 
-        function pxToRem(px: number, base: number = 16): number {
-            return px / base;
-        }
+        // function pxToRem(px: number, base: number = 16): number {
+        //     return px / base;
+        // }
 
-        json.elements.forEach((element: any) => {
+        if (Array.isArray(json.elements)) {
+            json.elements.forEach((element: any) => {
 
-            // function fitTextToWidth(textbox, maxWidth) {
-            // while (textbox.width > maxWidth && textbox.fontSize > 10) {
-            //     textbox.set({
-            //         fontSize: textbox.fontSize - 1
-            //     });
-            //     textbox.set({
-            //         width: maxWidth
-            //     });
-            // }
 
-            // }
-            // function resizeCanvasToFitText(
-            //     canvas: fabric.Canvas,
-            //     textbox: fabric.IText | fabric.Textbox,
-            //     padding: number = 100,
-            //     minWidth: number = 800,
-            //     minHeight: number = 600
-            // ) {
-            //     const requiredWidth = textbox.getScaledWidth() + padding;
-            //     const requiredHeight = textbox.getScaledHeight() + 250;
-
-            //     const newWidth = Math.max(requiredWidth, minWidth);
-            //     const newHeight = Math.max(requiredHeight, minHeight);
-
-            //     // ✅ Use getWidth and getHeight instead of getDimensions()
-            //     const currentWidth = canvas.getWidth();
-            //     const currentHeight = canvas.getHeight();
-            //     console.log("-------currentWidth------",currentWidth)
-            //     console.log("-------newWidth------",newWidth)
-            //     if (currentWidth !== newWidth || currentHeight !== newHeight) {
-            //         // canvas.setDimensions({
-            //         //     width: newWidth,
-            //         //     height: newHeight
-            //         // });
-
-            //         // textbox.set({
-            //         //     left: newWidth / 2,
-            //         //     originX: 'center'
-            //         // });
-
-            //         // canvas.renderAll();
-            //     }
-            // }
-            function fitFontSizeToCanvas(
-                canvas: fabric.Canvas,
-                textObj: fabric.IText | fabric.Textbox,
-                maxWidth: number = canvas.getWidth() - 40,
-                maxHeight: number = canvas.getHeight() - 100,
-                minFontSize: number = 10
-            ) {
-                let fontSize = textObj.fontSize || 16;
-                textObj.set({ fontSize });
-
-                while (
-                    (textObj.getScaledWidth() > maxWidth || textObj.getScaledHeight() > maxHeight)
-                    && fontSize > minFontSize
+                function fitFontSizeToCanvas(
+                    canvas: fabric.Canvas,
+                    textObj: fabric.IText | fabric.Textbox,
+                    maxWidth: number = canvas.getWidth() - 40,
+                    maxHeight: number = canvas.getHeight() - 100,
+                    minFontSize: number = 10
                 ) {
-                    fontSize -= 1;
+                    let fontSize = textObj.fontSize || 16;
                     textObj.set({ fontSize });
+
+                    while (
+                        (textObj.getScaledWidth() > maxWidth || textObj.getScaledHeight() > maxHeight)
+                        && fontSize > minFontSize
+                    ) {
+                        fontSize -= 1;
+                        textObj.set({ fontSize });
+                    }
+
+                    canvas.renderAll();
                 }
 
-                canvas.renderAll();
-            }
+                if (element.type === 'text') {
+                    const textObject = new fabric.IText(element.content || '', {
+                        left: element.x,
+                        top: element.y,
+                        fill: element.color,
+                        fontSize: element.fontSize,
+                        fontFamily: element.fontFamily,
+                        fontWeight: element.fontWeight as any,
+                        textAlign: element.textAlign as any,
+                        originX: 'center',
+                        originY: 'center',
+                        // selectable: false,
+                        // evented: false,
+                    });
+                    canvas.add(textObject);
+                    // const canvasWidthPx = canvas.getWidth();
+                    // const canvasHeightPx = canvas.getHeight();
+                    // const baseRem = 16;
+                    // const maxWidthRem = pxToRem(canvasWidthPx - 40, baseRem);
+                    // const maxHeightRem = pxToRem(canvasHeightPx - 100, baseRem);
+                    fitFontSizeToCanvas(canvas, textObject);
+                } else if (element.type === 'icon') {
+                    const iconRadius = element.width / 2 || 45;
+                    const iconColor = element.color || '#cccccc';
 
-            if (element.type === 'text') {
-                const textObject = new fabric.IText(element.content || '', {
-                    left: element.x,
-                    top: element.y,
-                    fill: element.color,
-                    fontSize: element.fontSize,
-                    fontFamily: element.fontFamily,
-                    fontWeight: element.fontWeight as any,
-                    textAlign: element.textAlign as any,
-                    originX: 'center',
-                    originY: 'center',
-                    // selectable: false,
-                    // evented: false,
-                });
-                canvas.add(textObject);
-                // const canvasWidthPx = canvas.getWidth();
-                // const canvasHeightPx = canvas.getHeight();
-                // const baseRem = 16;
-                // const maxWidthRem = pxToRem(canvasWidthPx - 40, baseRem);
-                // const maxHeightRem = pxToRem(canvasHeightPx - 100, baseRem);
-                fitFontSizeToCanvas(canvas, textObject);
-            } else if (element.type === 'icon') {
-                const iconRadius = element.width / 2 || 45;
-                const iconColor = element.color || '#cccccc';
+                    const iconCircle = new fabric.Circle({
+                        radius: iconRadius,
+                        left: element.x,
+                        top: element.y,
+                        fill: iconColor,
+                        originX: 'center',
+                        originY: 'center',
+                        // selectable: false,
+                        // evented: false,
+                    });
+                    canvas.add(iconCircle);
 
-                const iconCircle = new fabric.Circle({
-                    radius: iconRadius,
-                    left: element.x,
-                    top: element.y,
-                    fill: iconColor,
-                    originX: 'center',
-                    originY: 'center',
-                    // selectable: false,
-                    // evented: false,
-                });
-                canvas.add(iconCircle);
+                    const iconText = new fabric.IText(element.name || 'Icon', {
+                        left: element.x,
+                        top: element.y,
+                        fill: '#ffffff',
+                        fontSize: 0.4 * iconRadius,
+                        fontFamily: 'Arial',
+                        originX: 'center',
+                        originY: 'center',
+                        // selectable: false,
+                        // evented: false,
+                    });
+                    canvas.add(iconText);
+                }
 
-                const iconText = new fabric.IText(element.name || 'Icon', {
-                    left: element.x,
-                    top: element.y,
-                    fill: '#ffffff',
-                    fontSize: 0.4 * iconRadius,
-                    fontFamily: 'Arial',
-                    originX: 'center',
-                    originY: 'center',
-                    // selectable: false,
-                    // evented: false,
-                });
-                canvas.add(iconText);
-            }
-
-        });
+            });
+        }
 
 
         canvas.renderAll();
