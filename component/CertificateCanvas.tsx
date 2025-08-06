@@ -122,7 +122,8 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                 stroke: borderColor,
                 strokeWidth: borderWidth,
                 fill: 'transparent',
-                
+                 selectable: false,
+            evented: false,
                 
             });
 
