@@ -40,7 +40,7 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
         const canvas = new fabric.Canvas(canvasRef.current, {
             width: 1000,
             height: 700,
-            
+
             hoverCursor: 'default',
         });
 
@@ -111,9 +111,11 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
 
 
         if (json.border) {
-            const borderWidth = json.border.width || 10;
+            const borderWidth = json.border.width || 5;
             const borderColor = json.border.color || '#000000';
-
+            console.log("-------canvas.width----",canvas.width)
+            console.log("-------canvas.height----",canvas.height)
+            console.log("-------borderWidth----",borderWidth)
             const borderRect = new fabric.Rect({
                 left: borderWidth / 2,
                 top: borderWidth / 2,
@@ -122,9 +124,9 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                 stroke: borderColor,
                 strokeWidth: borderWidth,
                 fill: 'transparent',
-                 selectable: false,
-            evented: false,
-                
+                //  selectable: false,
+                evented: false,
+
             });
 
             if (json.border.type === 'glow_line') {
@@ -137,10 +139,10 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                     }),
                 });
             }
-            console.log("------borderRect----",borderRect)
-             canvas.add(borderRect);
+            console.log("------borderRect----", borderRect)
+            canvas.add(borderRect);
         }
-        
+
         if (Array.isArray(json.elements)) {
             json.elements.forEach((element: any) => {
 
@@ -177,15 +179,15 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                         textAlign: element.textAlign as any,
                         originX: 'center',
                         originY: 'center',
-                        
-                        
+
+
                     });
                     canvas.add(textObject);
-                    
-                    
-                    
-                    
-                    
+
+
+
+
+
                     fitFontSizeToCanvas(canvas, textObject);
                 } else if (element.type === 'icon') {
                     const iconRadius = element.width / 2 || 45;
@@ -198,8 +200,8 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                         fill: iconColor,
                         originX: 'center',
                         originY: 'center',
-                        
-                        
+
+
                     });
                     canvas.add(iconCircle);
 
@@ -211,8 +213,8 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                         fontFamily: 'Arial',
                         originX: 'center',
                         originY: 'center',
-                        
-                        
+
+
                     });
                     canvas.add(iconText);
                 }
