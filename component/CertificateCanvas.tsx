@@ -16,8 +16,9 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
 
     useImperativeHandle(ref, () => ({
         exportAsImage: () => {
-            console.log("--fabricCanvas.current---", fabricCanvas.current)
+            console.log("Calling exportAsImage...", fabricCanvas.current);
             if (fabricCanvas.current) {
+                console.log("Canvas exists, rendering...");
                 fabricCanvas.current.renderAll();
                 return fabricCanvas.current.toDataURL({
                     format: 'png',
@@ -25,6 +26,7 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                     multiplier: 2
                 });
             }
+            console.log("Canvas not found during export");
             return '';
         }
     }));
@@ -38,14 +40,11 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
         const canvas = new fabric.Canvas(canvasRef.current, {
             width: 1000,
             height: 700,
-            // selection: false, 
+            
             hoverCursor: 'default',
         });
 
-
         canvas.clear();
-
-
 
         const backgroundRect = new fabric.Rect({
             left: 0,
@@ -123,8 +122,8 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                 stroke: borderColor,
                 strokeWidth: borderWidth,
                 fill: 'transparent',
-                // selectable: false,
-                // evented: false,
+                
+                
             });
 
             if (json.border.type === 'glow_line') {
@@ -137,16 +136,10 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                     }),
                 });
             }
-            // canvas.add(borderRect);  // currently not need
+            console.log("------borderRect----",borderRect)
+             canvas.add(borderRect);
         }
-        // function remToPx(rem: number, base: number = 16): number {
-        //     return rem * base;
-        // }
-
-        // function pxToRem(px: number, base: number = 16): number {
-        //     return px / base;
-        // }
-
+        
         if (Array.isArray(json.elements)) {
             json.elements.forEach((element: any) => {
 
@@ -183,15 +176,15 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                         textAlign: element.textAlign as any,
                         originX: 'center',
                         originY: 'center',
-                        // selectable: false,
-                        // evented: false,
+                        
+                        
                     });
                     canvas.add(textObject);
-                    // const canvasWidthPx = canvas.getWidth();
-                    // const canvasHeightPx = canvas.getHeight();
-                    // const baseRem = 16;
-                    // const maxWidthRem = pxToRem(canvasWidthPx - 40, baseRem);
-                    // const maxHeightRem = pxToRem(canvasHeightPx - 100, baseRem);
+                    
+                    
+                    
+                    
+                    
                     fitFontSizeToCanvas(canvas, textObject);
                 } else if (element.type === 'icon') {
                     const iconRadius = element.width / 2 || 45;
@@ -204,8 +197,8 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                         fill: iconColor,
                         originX: 'center',
                         originY: 'center',
-                        // selectable: false,
-                        // evented: false,
+                        
+                        
                     });
                     canvas.add(iconCircle);
 
@@ -217,8 +210,8 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
                         fontFamily: 'Arial',
                         originX: 'center',
                         originY: 'center',
-                        // selectable: false,
-                        // evented: false,
+                        
+                        
                     });
                     canvas.add(iconText);
                 }
@@ -226,7 +219,7 @@ const CertificateCanvas = forwardRef<CertificateCanvasHandle, CertificateCanvasP
             });
         }
 
-
+        fabricCanvas.current = canvas;
         canvas.renderAll();
 
 

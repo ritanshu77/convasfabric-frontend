@@ -46,7 +46,7 @@ export default function Cartificate() {
             };
 
             let response = await axios.request(config);
-            // console.log("------response--------", JSON.stringify(response))
+
 
             if (response.data && response.data.data) {
                 if (Array.isArray(response.data.data)) {
@@ -57,18 +57,18 @@ export default function Cartificate() {
 
                     setJson([response.data.data]);
                 } else {
-                    setJson([]); // Handle unexpected data format
+                    setJson([]);
                     setErrorMessage("Received unexpected data format from the API.");
                 }
             } else {
-                setJson([]); // No data received
+                setJson([]);
                 setErrorMessage("No data received from the API.");
             }
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 if (error.response) {
-                    // The request was made and the server responded with a status code
-                    // that falls out of the range of 2xx
+
+
                     console.error("API Error Response:", error.response.data);
                     console.error("API Error Status:", error.response.status);
                     console.error("API Error Headers:", error.response.headers);
@@ -76,34 +76,40 @@ export default function Cartificate() {
                         `Server Error: ${error.response.status} - ${error.response.data?.message || 'Something went wrong on the server.'}`
                     );
                 } else if (error.request) {
-                    // The request was made but no response was received
-                    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-                    // http.ClientRequest in node.js
+
+
+
                     console.error("API No Response:", error.request);
                     setErrorMessage("Network Error: No response received from the server. Please check your connection or the server status.");
                 } else {
-                    // Something happened in setting up the request that triggered an Error
+
                     console.error("API Request Setup Error:", error.message);
                     setErrorMessage(`Request Error: ${error.message}`);
                 }
             } else {
-                // Generic error handling for non-Axios errors
+
                 console.error("An unexpected error occurred:", error);
                 setErrorMessage("An unexpected error occurred. Please try again.");
             }
-            setJson([]); // Clear previous JSON data on error
+            setJson([]);
         } finally {
             setLoading(false)
         }
     }
     const handleDownload = (index: number) => {
+        console.log("----------canvasRefs-------", canvasRefs.current[index])
         const ref = canvasRefs.current[index];
-        console.log("--ref----",ref)
-        if (!ref || !ref.exportAsImage) return;
+        console.log("----------typeof ref.exportAsImage-------", ref.exportAsImage())
+        if (!ref || typeof ref.exportAsImage !== 'function') {
+            console.warn("No ref or exportAsImage missing");
+            return;
+        }
 
         const dataUrl = ref.exportAsImage();
-        console.log("---dataUrl----",dataUrl)
-        if (!dataUrl) return;
+        if (!dataUrl.startsWith('data:image')) {
+            console.warn("Invalid image data URL");
+            return;
+        }
 
         const pdf = new jsPDF("landscape", "pt", "a4");
         const imgProps = pdf.getImageProperties(dataUrl);
@@ -157,7 +163,10 @@ export default function Cartificate() {
                                 <div className='w-full  flex justify-center p-4 bg-white rounded-xl shadow-xl border border-gray-200 overflow-auto overflow-x-auto overflow-y-auto'>
                                     <CertificateCanvas
                                         ref={(ref) => {
-                                            if (ref) canvasRefs.current[index] = ref;
+                                            if (ref) {
+                                                console.log("Assigned ref at index", index);
+                                                canvasRefs.current[index] = ref;
+                                            }
                                         }}
                                         json={item}
                                     />
@@ -166,19 +175,24 @@ export default function Cartificate() {
 
                                     <button
                                         className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                                        onClick={() => handleDownload(index)}
+                                        onClick={() => {
+                                            console.log("Download clicked for index", index);
+                                            handleDownload(index);
+                                        }}
                                     >
                                         Download PDF
                                     </button>
                                 </div>
 
                             </div>
-                            <div className="w-full md:w-7/5 flex justify-center p-4 bg-white rounded-xl shadow-xl border border-gray-200">
-                                <textarea
-                                    className="w-full h-[600px] border border-gray-300 rounded-lg p-3 text-sm text-gray-800 bg-gray-50 resize-none font-mono leading-relaxed overflow-auto"
-                                    readOnly
-                                    value={JSON.stringify(item, null, 2)}
-                                />
+                            <div className=" md:w-7/5 ">
+                                <div className='w-full flex justify-center p-4 bg-white rounded-xl shadow-xl border border-gray-200'>
+                                    <textarea
+                                        className="w-full h-[600px] border border-gray-300 rounded-lg p-3 text-sm text-gray-800 bg-gray-50 resize-none font-mono leading-relaxed overflow-auto"
+                                        readOnly
+                                        value={JSON.stringify(item, null, 2)}
+                                    />
+                                </div>
                             </div>
                         </div>
                         {index < json.length - 1 && (
